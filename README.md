@@ -48,27 +48,58 @@ it also works with `ember-parachute`.
 Also, `<LinkTo>` urls will be correctly generated.
 
 
+
 ```ts
-//some-component.js
-export default class SomeComponent extends GlimmerComponent {
-	query = {
-		eureka: 'one big word',
-		hola: false,
-		pet: 'dog',
-		question: 'are you okay',
-		arr: [10, 5, 4, 'hello how are you']
-		otherObject: {
-			weCanStartOverHere: ['hello']
+//some-controller.js
+export default class SomeControllerController extends Controller {
+	queryParams = ['oneQueryParam'];
+
+	@tracked oneQueryParam = 3;
+
+	@tracked partialState = {
+		amazing: ['super', 'cool']
+	}
+
+	@tracked num = this.oneQueryParam?.some?.hard?.num || 0;
+
+	get someHardState() {
+		return {
+			some: {
+				hard: {
+					state: ['super', {
+						hard: true,
+						state: ['inside', true, 'of this']
+					}],
+					...this.partialState,
+					num: this.num
+				}
+			}
 		}
+	}
+
+	@action
+	incrementor() {
+		this.num++;
+	}
+
+	@action
+	augmentQuery() {
+		this.set('partialState', { prop: 1, other: { complex: 'stuff'}});
 	}
 }
 ```
+
 ```hbs
-<LinkTo @route="some route" @query={{this.query}}>
+<LinkTo @route="some-route" @query={{hash oneQueryParam=this.someHardState}}>
   Some Hard query params
 </LinkTo>
+
+<button {{on "click" this.augmentQuery}}>
+  Augment!
+</button>
 ```
-And expect the url like this `one?qs=(query:(eureka:'one+big+word',hola:!f,pet:dog,question:'are+you+okay?',arr:!(10,5,4,'hello+how+are+you'),otherObject:(weCanStartOverHere:!(hello))))`
+
+And expect the url like this `some-route/?qs=(oneQueryParam:(some:(hard:(num:37,other:(complex:stuff),prop:1,state:!(super,(hard:!t,state:!(inside,!t,%27of+this%27)))))))`
 
 
 
