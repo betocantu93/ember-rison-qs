@@ -8,7 +8,7 @@ Replace router query param serialize and deserialize mechanics to use [rison-nod
 - Complex state saved in the url without common ember.js deserialize, serialize issues.
 
 This idea comes from watching kibana dashboards query params, they actually use this exact method.
-It solves the ugly query strings and huge strings, some servers doesn't even support 2k+ characters.
+It solves the ugly query strings and huge strings, some servers doesn't even support 2k+ characters, so this might help too if your server knows how to deserialize them.
 
 
 Compatibility
