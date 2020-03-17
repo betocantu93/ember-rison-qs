@@ -7,8 +7,9 @@ Replace router query param serialize and deserialize mechanics to use [rison-nod
 - Friendly Urls
 - Complex state saved in the url without common ember.js deserialize, serialize issues.
 
-This idea came while watching kibana dashboards query params, they actually use this exact method.
+This idea comes from watching kibana dashboards query params, they actually use this exact method.
 It solves the ugly query strings and huge strings, some servers doesn't even support 2k+ characters.
+
 
 Compatibility
 ------------------------------------------------------------------------------
@@ -67,12 +68,6 @@ export default class SomeComponent extends GlimmerComponent {
 </LinkTo>
 ```
 And expect the url like this `one?qs=(query:(eureka:'one+big+word',hola:!f,pet:dog,question:'are+you+okay?',arr:!(10,5,4,'hello+how+are+you'),otherObject:(weCanStartOverHere:!(hello))))`
-
-
-Contributing
-------------------------------------------------------------------------------
-
-See the [Contributing](CONTRIBUTING.md) guide for details.
 
 
 License
