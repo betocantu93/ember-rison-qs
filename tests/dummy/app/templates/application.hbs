@@ -1,7 +1,13 @@
-
-<LinkTo @route="one" @query={{this.query}}>
-	One
+<LinkTo @route="one" @query={{hash oneQueryParam=this.someHardState}}>
+	Go To Application
 </LinkTo>
 
-<hr />
-{{outlet}}
+Current Number is: {{this.num}}
+<button {{on 'click' this.incrementor}}>
+	+1 to complex state
+</button>
+<button {{on 'click' (fn this.changeQuery (hash hello="world" other=(hash stuff="inside")))}} role="button">
+	My button
+</button>
+
+{{log this.oneQueryParam}}
