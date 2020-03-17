@@ -33,7 +33,7 @@ export default Mixin.create({
           newParams[key] = params[key];
         }
       }
-      rison.encode(newParams);
+      
       if (Object.keys(newParams).length > 0) {
         return `?qs=${encodeUriQuery(rison.encode(newParams))}`;
       } else {
