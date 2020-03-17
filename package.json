@@ -1,6 +1,6 @@
 {
   "name": "ember-rison-qs",
-  "version": "0.0.0-alpha0-0-2",
+  "version": "0.0.0-alpha0-0-3",
   "description": "Implement serialization and deserialization of rison-node query strings for query-params in ember.",
   "keywords": [
     "ember-addon",
