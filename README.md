@@ -37,6 +37,7 @@ import RisonQsMixin from 'ember-rison-qs';
 export default class ApplicationRoute extends Route.extend(RisonQsMixin) {}
 
 ```
+*Note:* you should only be including the mixin once, in application route.
 
 And that's it, you can expect two thigs:
 
@@ -68,6 +69,8 @@ export default class SomeComponent extends GlimmerComponent {
 </LinkTo>
 ```
 And expect the url like this `one?qs=(query:(eureka:'one+big+word',hola:!f,pet:dog,question:'are+you+okay?',arr:!(10,5,4,'hello+how+are+you'),otherObject:(weCanStartOverHere:!(hello))))`
+
+
 
 
 License
