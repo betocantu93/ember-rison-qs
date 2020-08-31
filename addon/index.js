@@ -50,7 +50,7 @@ export default Mixin.create({
           .replace(/%20/g, ' ')
           .replace(/\+/g, ' ');
       }
-      return rison.decode(window.decodeURI(params));
+      return rison.decode(window.decodeURIComponent(params));
     };
 
     // This method can be run multiple times for each param.
