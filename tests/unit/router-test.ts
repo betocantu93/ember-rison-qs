@@ -1,4 +1,5 @@
 import EmberRouter from '@ember/routing/router';
+import Route from '@ember/routing/route';
 import { module, test } from 'qunit';
 import { setupTest } from 'ember-qunit';
 
@@ -164,6 +165,133 @@ module('Unit | router', function (hooks) {
       const router = new PlainRouter(this.owner);
 
       assert.throws(() => useRisonQueryParams(router), /setupRouter/);
+    });
+
+    // A new Ember can rename what this replaces: it says what, instead of
+    // skipping it and handing apps StoredValues where they read values
+    module('on an Ember that lacks what it replaces', function (hooks) {
+      let router: PrivateRouter;
+      let microlib: Record<string, unknown>;
+
+      hooks.beforeEach(function () {
+        register(this.owner, 'router:main', PlainRouter);
+        router = routerMain<PrivateRouter>(this.owner);
+        router.setupRouter();
+        microlib = router._routerMicrolib;
+      });
+
+      const MISSING: [
+        string,
+        (r: PrivateRouter, m: Record<string, unknown>) => void,
+      ][] = [
+        [
+          'router._serializeQueryParam',
+          (r) => Object.assign(r, { _serializeQueryParam: undefined }),
+        ],
+        [
+          'router._deserializeQueryParam',
+          (r) => Object.assign(r, { _deserializeQueryParam: undefined }),
+        ],
+        [
+          'router._routerMicrolib.recognizer.parseQueryString',
+          (r) =>
+            Object.assign(r._routerMicrolib.recognizer, {
+              parseQueryString: undefined,
+            }),
+        ],
+        [
+          'router._routerMicrolib.recognizer.generateQueryString',
+          (r) =>
+            Object.assign(r._routerMicrolib.recognizer, {
+              generateQueryString: undefined,
+            }),
+        ],
+        [
+          'router._routerMicrolib.getRoute',
+          (_r, m) => Object.assign(m, { getRoute: undefined }),
+        ],
+        [
+          'router._routerMicrolib.toInfos',
+          (_r, m) => Object.assign(m, { toInfos: undefined }),
+        ],
+        [
+          'router._routerMicrolib.fromInfos',
+          (_r, m) => Object.assign(m, { fromInfos: undefined }),
+        ],
+        [
+          'router._routerMicrolib.recognize',
+          (_r, m) => Object.assign(m, { recognize: undefined }),
+        ],
+        [
+          'router._routerMicrolib.recognizeAndLoad',
+          (_r, m) => Object.assign(m, { recognizeAndLoad: undefined }),
+        ],
+      ];
+
+      for (const [name, remove] of MISSING) {
+        test(`without ${name}, it fails naming it`, function (assert) {
+          remove(router, microlib);
+
+          assert.throws(
+            () => useRisonQueryParams(router as unknown as EmberRouter),
+            (error: Error) =>
+              error.message.includes(`no ${name}.`) &&
+              error.message.includes(
+                'https://github.com/betocantu93/ember-rison-qs/issues',
+              ),
+          );
+        });
+      }
+
+      test('it names all that is missing, at once', function (assert) {
+        Object.assign(microlib, { toInfos: undefined, recognize: undefined });
+
+        assert.throws(
+          () => useRisonQueryParams(router as unknown as EmberRouter),
+          /no router\._routerMicrolib\.toInfos, router\._routerMicrolib\.recognize\./,
+        );
+      });
+
+      test('it replaces nothing when it fails', function (assert) {
+        const { recognizer } = router._routerMicrolib;
+        const before = {
+          parse: recognizer.parseQueryString,
+          generate: recognizer.generateQueryString,
+          serialize: router._serializeQueryParam,
+          toInfos: microlib.toInfos,
+        };
+
+        Object.assign(microlib, { recognizeAndLoad: undefined });
+
+        assert.throws(() =>
+          useRisonQueryParams(router as unknown as EmberRouter),
+        );
+        assert.strictEqual(recognizer.parseQueryString, before.parse);
+        assert.strictEqual(recognizer.generateQueryString, before.generate);
+        assert.strictEqual(router._serializeQueryParam, before.serialize);
+        assert.strictEqual(microlib.toInfos, before.toInfos);
+        assert.strictEqual(recognizer.generateQueryString({ a: 1 }), '?a=1');
+      });
+
+      test('a route without its query param hooks fails naming them', function (assert) {
+        register(
+          this.owner,
+          'route:login',
+          class extends Route {
+            // as on an Ember that renamed them
+            serializeQueryParam = undefined as never;
+            deserializeQueryParam = undefined as never;
+          },
+        );
+        useRisonQueryParams(router as unknown as EmberRouter);
+
+        const getRoute = microlib.getRoute as (name: string) => unknown;
+
+        assert.throws(
+          () => getRoute.call(microlib, 'login'),
+          /no route\.serializeQueryParam, route\.deserializeQueryParam\./,
+        );
+      });
     });
 
     test('set up twice, it reads and writes the same', function (assert) {

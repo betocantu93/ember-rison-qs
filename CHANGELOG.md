@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.2
+
+- `useRisonQueryParams` fails with an error naming what is missing when a version of Ember lacks one of the router internals it replaces (`router._routerMicrolib.toInfos`, a route's `serializeQueryParam`, ...), instead of skipping it, which left `StoredValue`s where apps read values. Nothing is replaced when it fails. The same ember-source runs in development, tests and production, so this shows at the first boot or test run.
+
+## 2.0.1
+
+- Tests that pin each Ember router internal the addon relies on, by name, on every Ember version it is tested on (beta and alpha included). No change to the code.
+
 ## 2.0.0
 
 A rewrite, as a v2 addon. URLs stay the same `?qs=(...)`, so links already shared keep working.

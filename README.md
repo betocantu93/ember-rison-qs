@@ -198,7 +198,7 @@ Ember's router keeps each query param's value as a string (`'2'`, `'true'`) and 
 
 So `useRisonQueryParams` gives the router a `StoredValue` for each value instead: an object holding the value's rison, one per rison. Equal values are the same object, so `===` compares them by value; router_js leaves objects alone; and storing a `StoredValue` again gives it back as it is. Everywhere a value leaves the router (controllers, `model(params)`, `transition.to.queryParams`, `router.currentRoute`, `router.recognize`, a route's own hooks, the URL), it is decoded into a plain copy. Ember's own route action, `queryParamsDidChange`, keeps getting the stored values, which Ember 7 compares; `readValue` decodes them.
 
-It replaces a few of the router's private functions to do this: there is no public API for it. The test suite runs on Ember 5.8, 5.12, 6.4, 7.4 and the next beta, so a change in them shows up before a release.
+It replaces a few of the router's private functions to do this: there is no public API for it. The test suite pins each of them by name, on Ember 5.8, 5.12, 6.4, 6.12, 7.4, the next beta and alpha, so a change in them shows up before a release. And if your Ember lacks one of them, `useRisonQueryParams` fails as the app boots, with an error naming what is missing, instead of half working.
 
 ## Routes as data
 

@@ -197,6 +197,28 @@ function readQueryParams(routeInfo: RouteInfoLike | null | undefined) {
 const wrappedRoutes = new WeakSet<object>();
 
 /**
+ * Fails, naming them, when Ember's router lacks what this replaces: it can't
+ * keep query params typed without them, and skipping one would hand apps
+ * StoredValues where they read values. (The same ember-source runs in
+ * development, tests and production: this fails at the first boot or test.)
+ */
+function requireInternals(where: string, object: object, names: string[]) {
+  const missing = names.filter(
+    (name) => typeof (object as Record<string, unknown>)[name] !== 'function',
+  );
+
+  if (missing.length) {
+    throw new Error(
+      `ember-rison-qs: this version of Ember has no ${missing
+        .map((name) => `${where}.${name}`)
+        .join(
+          ', ',
+        )}. useRisonQueryParams replaces it to keep query params typed (Ember has no public API for this), so it can't run on this version. Please open an issue: https://github.com/betocantu93/ember-rison-qs/issues`,
+    );
+  }
+}
+
+/**
  * A route's query param hooks, around whatever they are (Ember's own, or an
  * app's): they get values, and what they give back is stored.
  */
@@ -205,6 +227,10 @@ function wrapRoute(route: RouteLike | undefined) {
     return route;
   }
 
+  requireInternals('route', route, [
+    'serializeQueryParam',
+    'deserializeQueryParam',
+  ]);
   wrappedRoutes.add(route);
 
   const { serializeQueryParam, deserializeQueryParam } = route;
@@ -266,14 +292,27 @@ export function useRisonQueryParams(
     );
   }
 
-  const {
-    recognizer,
-    getRoute,
-    toInfos,
-    fromInfos,
-    recognize,
-    recognizeAndLoad,
-  } = microlib;
+  requireInternals('router', privateRouter, [
+    '_serializeQueryParam',
+    '_deserializeQueryParam',
+  ]);
+  // eslint-disable-next-line ember/no-private-routing-service -- its name, for the error
+  requireInternals('router._routerMicrolib.recognizer', microlib.recognizer, [
+    'parseQueryString',
+    'generateQueryString',
+  ]);
+  // eslint-disable-next-line ember/no-private-routing-service -- its name, for the error
+  requireInternals('router._routerMicrolib', microlib, [
+    'getRoute',
+    'toInfos',
+    'fromInfos',
+    'recognize',
+    'recognizeAndLoad',
+  ]);
+
+  const { recognizer } = microlib;
+  const { getRoute, toInfos, fromInfos, recognize, recognizeAndLoad } =
+    microlib as Required<RouterMicrolib>;
 
   recognizer.parseQueryString = (queryString) =>
     mapValues(parseRisonQueryString(queryString, options), storeValue);
@@ -284,49 +323,34 @@ export function useRisonQueryParams(
     coerce(readValue(value), defaultType);
 
   // A route's own hooks, overridden or not, work with values
-  if (getRoute) {
-    microlib.getRoute = function (name) {
-      const route = getRoute.call(this, name);
+  microlib.getRoute = function (name) {
+    const route = getRoute.call(this, name);
 
-      // (any promise: @embroider/router's, or another router's)
-      return route && 'then' in route
-        ? route.then(wrapRoute)
-        : wrapRoute(route);
-    };
-  }
+    // (any promise: @embroider/router's, or another router's)
+    return route && 'then' in route ? route.then(wrapRoute) : wrapRoute(route);
+  };
 
   // What apps read off the router gets the values decoded
-  if (toInfos) {
-    microlib.toInfos = function (transition, ...rest) {
-      toInfos.call(this, transition, ...rest);
-      readQueryParams(transition?.to);
-    };
-  }
+  microlib.toInfos = function (transition, ...rest) {
+    toInfos.call(this, transition, ...rest);
+    readQueryParams(transition?.to);
+  };
+  microlib.fromInfos = function (transition, ...rest) {
+    fromInfos.call(this, transition, ...rest);
+    readQueryParams(transition?.from);
+  };
+  microlib.recognize = function (url) {
+    const routeInfo = recognize.call(this, url);
 
-  if (fromInfos) {
-    microlib.fromInfos = function (transition, ...rest) {
-      fromInfos.call(this, transition, ...rest);
-      readQueryParams(transition?.from);
-    };
-  }
+    readQueryParams(routeInfo);
 
-  if (recognize) {
-    microlib.recognize = function (url) {
-      const routeInfo = recognize.call(this, url);
-
+    return routeInfo;
+  };
+  microlib.recognizeAndLoad = function (url) {
+    return recognizeAndLoad.call(this, url).then((routeInfo) => {
       readQueryParams(routeInfo);
 
       return routeInfo;
-    };
-  }
-
-  if (recognizeAndLoad) {
-    microlib.recognizeAndLoad = function (url) {
-      return recognizeAndLoad.call(this, url).then((routeInfo) => {
-        readQueryParams(routeInfo);
-
-        return routeInfo;
-      });
-    };
-  }
+    });
+  };
 }
