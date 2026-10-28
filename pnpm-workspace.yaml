@@ -22,3 +22,9 @@ supportedArchitectures:
   os: [current, darwin, linux]
   cpu: [current]
   libc: [current, glibc]
+
+# tmp < 0.2.6 has path traversal (GHSA-ph9p-34f9-6g65). Old broccoli-era
+# packages under @embroider/compat (external-editor, can-symlink) still ask
+# for 0.0.x; both only call tmp.tmpNameSync, which 0.2 keeps.
+overrides:
+  tmp: ^0.2.6
