@@ -6,6 +6,9 @@
 /dist-*/
 /declarations/
 
+# the site, an app of its own
+/docs/
+
 # misc
 /coverage/
 pnpm-lock.yaml

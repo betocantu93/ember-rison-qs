@@ -1,3 +1,7 @@
+# the addon is the root; docs/ is its site (a playground and guides)
+packages:
+  - docs
+
 allowBuilds:
   esbuild: false
 
@@ -10,3 +14,11 @@ autoInstallPeers: false
 # we want true isolation,
 # if a dependency is not declared, we want an error
 resolvePeersFromWorkspaceRoot: false
+
+# Keep native binaries (rollup, esbuild...) for both macOS and Linux: the same
+# node_modules is used from a Mac and from a Linux container, and an install
+# on one must not remove the other's.
+supportedArchitectures:
+  os: [current, darwin, linux]
+  cpu: [current]
+  libc: [current, glibc]
