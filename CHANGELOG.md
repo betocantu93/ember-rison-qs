@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0
+## 2.0.0
 
 A rewrite, as a v2 addon. URLs stay the same `?qs=(...)`, so links already shared keep working.
 

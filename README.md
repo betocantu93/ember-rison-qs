@@ -316,7 +316,7 @@ URLs stay the same `?qs=(...)`, so links already shared keep working. What's new
 
 - [Rison](https://github.com/Nanonid/rison) is the format and its original implementation. [rison-node](https://github.com/w33ble/rison-node) is its npm packaging, by Joe Fleming and contributors. This addon depends on [prysmex-rison-node](https://www.npmjs.com/package/prysmex-rison-node) ([source](https://github.com/prysmex/rison-node)), a fork of rison-node that adds types, an ES module build, bug fixes and tests: the format and the implementation it builds on are theirs.
 - The idea of keeping app state in rison in the URL comes from [Kibana](https://github.com/elastic/kibana).
-- ember-rison-qs was started by [Mario Trujillo](https://github.com/mtrunt) and [Alberto Cantú](https://github.com/betocantu93). 1.0 comes from how [Prysmex](https://github.com/prysmex) uses it in production, with each edge case it ran into turned into a test.
+- ember-rison-qs was started by [Mario Trujillo](https://github.com/mtrunt) and [Alberto Cantú](https://github.com/betocantu93). 2.0 comes from how [Prysmex](https://github.com/prysmex) uses it in production, with each edge case it ran into turned into a test.
 
 ## Contributing
 
