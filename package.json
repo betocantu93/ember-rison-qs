@@ -1,6 +1,6 @@
 {
   "name": "ember-rison-qs",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Rison query params for Ember: the whole query string in one readable `?qs=(...)`, typed values in and out, deep links and old-style links read too.",
   "keywords": [
     "ember-addon",
