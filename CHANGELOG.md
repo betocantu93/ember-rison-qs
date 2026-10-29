@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.4
+
+- Works on Ember 7.5 (beta and alpha), which failed at boot with "this version of Ember has no route.serializeQueryParam, route.deserializeQueryParam". Ember 7.5 adds route managers, and the router's `getRoute` gives a route's manager and bucket instead of the route; the addon now finds Ember's own routes in the bucket, so their query param hooks (and those apps override, as ember-parachute does) work as before.
+- A route with a route manager of its own (`setRouteManager`) that has query params fails with an error naming its route manager, instead of getting `StoredValue`s.
+
+## 2.0.3
+
+- Development only: a docs site with a playground, and `tmp` forced to `^0.2.6` among the dev dependencies (pnpm audit). No change to the published code.
+
 ## 2.0.2
 
 - `useRisonQueryParams` fails with an error naming what is missing when a version of Ember lacks one of the router internals it replaces (`router._routerMicrolib.toInfos`, a route's `serializeQueryParam`, ...), instead of skipping it, which left `StoredValue`s where apps read values. Nothing is replaced when it fails. The same ember-source runs in development, tests and production, so this shows at the first boot or test run.

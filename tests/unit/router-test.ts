@@ -294,6 +294,106 @@ module('Unit | router', function (hooks) {
       });
     });
 
+    // Ember 7.5 has route managers: getRoute gives a route's manager and
+    // bucket. Here getRoute is made to give them, on any Ember.
+    module('with route managers', function (hooks) {
+      let router: PrivateRouter;
+      let microlib: Record<string, unknown>;
+      let received: unknown[];
+
+      // Ember's types say these give strings
+      class LoudRoute extends Route {
+        serializeQueryParam(value: unknown) {
+          return value as string;
+        }
+
+        deserializeQueryParam(value: unknown) {
+          received.push(value);
+
+          return value;
+        }
+      }
+
+      hooks.beforeEach(function () {
+        received = [];
+        register(this.owner, 'router:main', PlainRouter);
+        register(this.owner, 'route:login', LoudRoute);
+        router = routerMain<PrivateRouter>(this.owner);
+        router.setupRouter();
+        microlib = router._routerMicrolib;
+      });
+
+      const getRoute = (name: string) =>
+        (microlib.getRoute as (name: string) => unknown).call(microlib, name);
+
+      test("Ember's own routes: the route in the bucket gets its hooks wrapped", function (assert) {
+        const route = this.owner.lookup('route:login') as LoudRoute;
+        const management = { manager: {}, bucket: { route } };
+
+        microlib.getRoute = () => management;
+        useRisonQueryParams(router as unknown as EmberRouter);
+
+        assert.strictEqual(getRoute('login'), management, 'given as it is');
+
+        const serialized: unknown = route.serializeQueryParam({
+          status: 'open',
+        });
+
+        assert.true(
+          serialized instanceof StoredValue,
+          'what it gives is stored',
+        );
+        assert.deepEqual(readValue(serialized), { status: 'open' });
+
+        route.deserializeQueryParam(storeValue([1, 2]));
+        assert.deepEqual(received, [[1, 2]], 'it gets values');
+      });
+
+      test('and when getRoute gives a promise of them', async function (assert) {
+        const route = this.owner.lookup('route:login') as LoudRoute;
+        const management = { manager: {}, bucket: { route } };
+
+        microlib.getRoute = () => Promise.resolve(management);
+        useRisonQueryParams(router as unknown as EmberRouter);
+
+        assert.strictEqual(await getRoute('login'), management);
+        assert.true(
+          (route.serializeQueryParam(2) as unknown) instanceof StoredValue,
+        );
+      });
+
+      test('a route manager of its own: its query params fail naming it', function (assert) {
+        const manager = {
+          serializeQueryParam: (...args: unknown[]) => args[1],
+          deserializeQueryParam: (...args: unknown[]) => args[1],
+        };
+        const management = { manager, bucket: {} };
+
+        microlib.getRoute = () => management;
+        useRisonQueryParams(router as unknown as EmberRouter);
+
+        assert.strictEqual(
+          getRoute('login'),
+          management,
+          'a route without query params is handed out as it is',
+        );
+
+        for (const hook of [
+          manager.serializeQueryParam,
+          manager.deserializeQueryParam,
+        ]) {
+          assert.throws(
+            () => hook({}, 2, 'page', 'number'),
+            (error: Error) =>
+              error.message.includes('route manager of its own') &&
+              error.message.includes(
+                'https://github.com/betocantu93/ember-rison-qs/issues',
+              ),
+          );
+        }
+      });
+    });
+
     test('set up twice, it reads and writes the same', function (assert) {
       register(this.owner, 'router:main', PlainRouter);
 

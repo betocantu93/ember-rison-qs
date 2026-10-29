@@ -200,6 +200,8 @@ So `useRisonQueryParams` gives the router a `StoredValue` for each value instead
 
 It replaces a few of the router's private functions to do this: there is no public API for it. The test suite pins each of them by name, on Ember 5.8, 5.12, 6.4, 6.12, 7.4, the next beta and alpha, so a change in them shows up before a release. And if your Ember lacks one of them, `useRisonQueryParams` fails as the app boots, with an error naming what is missing, instead of half working.
 
+Ember 7.5 adds route managers (`setRouteManager`). Ember's own routes work as before. A route with a route manager of its own has no `serializeQueryParam` / `deserializeQueryParam` for the addon to work through: if it has query params, they fail with an error naming its route manager, rather than reaching it untyped.
+
 ## Routes as data
 
 A route takes three forms in an Ember app: a URL, a `RouteInfo` (`transition.to`, `router.currentRoute`), and the arguments `transitionTo` takes. A **route location**, `{ name, params, queryParams }`, goes between them. It's plain data, so it fits in a query param or in storage as it is.

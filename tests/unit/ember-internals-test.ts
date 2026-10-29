@@ -194,17 +194,27 @@ module('Unit | Ember internals the addon relies on', function (hooks) {
       }
     });
 
+    // Up to Ember 7.4 getRoute gives the route; from 7.5, which has route
+    // managers, its manager and bucket, the route in bucket.route
     test("each route's query param hooks", function (assert) {
       register(this.owner, 'route:page', class extends Route {});
 
-      const route = router._routerMicrolib!.getRoute!('page') as object;
+      const found = router._routerMicrolib!.getRoute!('page') as {
+        manager?: object;
+        bucket?: { route?: object };
+      };
+      const route = 'manager' in found ? found.bucket?.route : found;
 
+      assert.ok(
+        route instanceof Route,
+        'getRoute gives the route, or { manager, bucket } with it in bucket.route',
+      );
       assert.true(
-        own(route, 'serializeQueryParam'),
+        own(route!, 'serializeQueryParam'),
         'route.serializeQueryParam',
       );
       assert.true(
-        own(route, 'deserializeQueryParam'),
+        own(route!, 'deserializeQueryParam'),
         'route.deserializeQueryParam',
       );
     });

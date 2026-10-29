@@ -121,12 +121,25 @@ interface RouteLike {
   ) => unknown;
 }
 
+// What getRoute gives from Ember 7.5, which has route managers: the route's
+// manager, and its bucket. Ember's own routes are in `bucket.route`.
+interface RouteManagement {
+  manager: Partial<RouteManagerLike>;
+  bucket?: { route?: RouteLike } | null;
+}
+
+interface RouteManagerLike {
+  serializeQueryParam: (bucket: unknown, ...args: unknown[]) => unknown;
+  deserializeQueryParam: (bucket: unknown, ...args: unknown[]) => unknown;
+}
+
+type FoundRoute = RouteLike | RouteManagement | undefined;
+
 interface RouterMicrolib {
   recognizer: RecognizerLike;
-  // a route by its name; with @embroider/router, maybe a promise of it
-  getRoute?: (
-    name: string,
-  ) => RouteLike | PromiseLike<RouteLike | undefined> | undefined;
+  // a route by its name (from Ember 7.5, its RouteManagement); with
+  // @embroider/router, maybe a promise of it
+  getRoute?: (name: string) => FoundRoute | PromiseLike<FoundRoute>;
   // they make `transition.to` and `transition.from`
   toInfos?: (transition: TransitionLike, ...rest: unknown[]) => void;
   fromInfos?: (transition: TransitionLike, ...rest: unknown[]) => void;
@@ -247,6 +260,40 @@ function wrapRoute(route: RouteLike | undefined) {
   return route;
 }
 
+const wrappedManagers = new WeakSet<object>();
+
+/**
+ * The route's hooks, wherever getRoute has it: as it is, or (Ember 7.5) in
+ * the bucket of its RouteManagement. Ember's own route manager calls the
+ * route's hooks for values, and the route calls them itself for defaults
+ * (`_qp`), so wrapping the route covers both.
+ *
+ * A route with a manager of its own (setRouteManager) has no route to wrap:
+ * its manager's query param hooks fail, naming it, when the router calls
+ * them, rather than handing it StoredValues. Its routes without query params
+ * are left alone.
+ */
+function wrapFound(found: FoundRoute) {
+  if (!found || !('manager' in found)) {
+    return wrapRoute(found);
+  }
+
+  const { manager, bucket } = found;
+
+  if (bucket?.route) {
+    wrapRoute(bucket.route);
+  } else if (manager && !wrappedManagers.has(manager)) {
+    wrappedManagers.add(manager);
+    manager.serializeQueryParam = manager.deserializeQueryParam = () => {
+      throw new Error(
+        "ember-rison-qs: a route with a route manager of its own (setRouteManager) has query params. useRisonQueryParams keeps them typed through the query param hooks of Ember's own routes, so it can't run with this route manager. Please open an issue: https://github.com/betocantu93/ember-rison-qs/issues",
+      );
+    };
+  }
+
+  return found;
+}
+
 /**
  * Makes the router read and write query params as rison, all in one `qs`.
  * Call it from your router's `setupRouter`: the router reads the address of
@@ -324,10 +371,10 @@ export function useRisonQueryParams(
 
   // A route's own hooks, overridden or not, work with values
   microlib.getRoute = function (name) {
-    const route = getRoute.call(this, name);
+    const found = getRoute.call(this, name);
 
     // (any promise: @embroider/router's, or another router's)
-    return route && 'then' in route ? route.then(wrapRoute) : wrapRoute(route);
+    return found && 'then' in found ? found.then(wrapFound) : wrapFound(found);
   };
 
   // What apps read off the router gets the values decoded
